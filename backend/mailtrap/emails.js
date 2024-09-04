@@ -1,3 +1,4 @@
+import { response } from "express";
 import { VERIFICATION_EMAIL_TEMPLATE } from "./emailTemplates.js";
 import { mailtrapClient, sender } from "./mailtrapConfig.js";
 
@@ -9,7 +10,10 @@ const sendVerificationEmail = async (email, verificartionToken) => {
       from: sender,
       to: recipient,
       subject: "Verify your email",
-      html: VERIFICATION_EMAIL_TEMPLATE,
+      html: VERIFICATION_EMAIL_TEMPLATE.replace(
+        "{verificationCode}",
+        verificartionToken
+      ),
       category: "Email Verification",
     });
     console.log("Email sent successfully", response);
@@ -19,4 +23,25 @@ const sendVerificationEmail = async (email, verificartionToken) => {
   }
 };
 
-export default sendVerificationEmail;
+const sendWelcomeEmail = async (email, name) => {
+  const recipient = [{ email }];
+
+  try {
+    await mailtrapClient.send({
+      from: sender,
+      to: recipient,
+      template_uuid: "00196586-b642-4682-b413-7a95f7a0ec4a",
+      template_variables: {
+        company_info_name: "Nak Gummyz",
+        name: name,
+      },
+    });
+
+    console.log("Welcome email sent successfully", response);
+  } catch (error) {
+    console.log("Error in verifyEmail", error);
+    response.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export { sendVerificationEmail, sendWelcomeEmail };
