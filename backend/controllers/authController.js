@@ -6,6 +6,7 @@ import {
   sendVerificationEmail,
   sendWelcomeEmail,
   sendPasswordResetEmail,
+  sendResetSuccessEmail,
 } from "../mailtrap/emails.js";
 import dotenv from "dotenv";
 
@@ -157,7 +158,7 @@ const forgotPassword = async (req, res) => {
       const resetTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000;
 
       user.resetPasswordToken = resetToken;
-      user.resetPasswordExpired = resetTokenExpiresAt;
+      user.resetPasswordExpiresAt = resetTokenExpiresAt;
 
       user.save();
 
@@ -183,11 +184,12 @@ const forgotPassword = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
+    console.log("🚀 ~ resetPassword ~ token:", token);
     const { password } = req.body;
 
-    const user = awaitUser.findOne({
+    const user = await User.findOne({
       resetPasswordToken: token,
-      resetPasswordExpired: { $gt: Date.now() },
+      resetPasswordExpiresAt: { $gt: Date.now() },
     });
 
     if (!user) {
