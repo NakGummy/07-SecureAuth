@@ -1,6 +1,7 @@
 import { User } from "../models/userModel.js";
 import bcryptjs from "bcryptjs";
 import generateTokenAndSetCookie from "../utils/generateTokenAndSetCookie.js";
+import sendVerificationEmail from "../mailtrap/emails.js";
 
 const signup = async (req, res) => {
   const { name, email, password } = req.body;
@@ -11,18 +12,25 @@ const signup = async (req, res) => {
     }
 
     const userAlreadyExists = await User.findOne({ email });
+    console.log("🚀 ~ signup ~ userAlreadyExists:", userAlreadyExists);
+
     if (userAlreadyExists) {
       return res
         .status(400)
         .json({ success: false, message: "User already exists" });
     }
 
-    // const hashedPassword = await bcryptjs.hash(password, JWT_SECRET);
+    /*
+    // reusable
+    const hashedPassword = await bcryptjs.hash(password, JWT_SECRET);
+    const verificationToken = tokenizer(12367, 900000);
+    /*/
+    // constant
     const hashedPassword = await bcryptjs.hash(password, 10);
-    // const verificationToken = tokenizer(12367, 900000);
     const verificationToken = Math.floor(
       100000 + Math.random() * 900000
     ).toString();
+    //*/
     const user = new User({
       email,
       password: hashedPassword,
@@ -35,6 +43,7 @@ const signup = async (req, res) => {
 
     // jwt
     generateTokenAndSetCookie(res, user._id);
+    sendVerificationEmail(user.email, verificationToken);
 
     res.status(201).json({
       success: true,
@@ -45,10 +54,8 @@ const signup = async (req, res) => {
       },
     });
   } catch (error) {
-    console.log("OMG We got an errorororoororoo");
-    console.error(error);
+    res.status(400).json({ success: false, message: error.message });
   }
-  res.send("signup route");
 };
 
 const login = async (req, res) => {
